@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="kr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- BootStrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8"
+        crossorigin="anonymous"></script>
+
+    <!-- JQeury & Ajax -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Aboreto&family=Gothic+A1:wght@500&family=Nanum+Pen+Script&family=Noto+Sans+KR&display=swap">
+    <style>
+        .hide_marker{
+            display: none;
+        }
+        body{
+            font-family: 'Gothic A1', sans-serif;
+        }
+        a{
+            text-decoration: none;
+        }
+
+        h5 {
+            margin: 0;
+        }
+
+        ul {
+            padding: 0;
+        }
+
+        #wrap {
+            width: 1000px;
+            margin: auto;
+            padding: 1em 0 0 0;
+        }
+
+        #head_wrap {
+            padding: 1em;
+            margin: 1em 0 1em 0;
+        }
+
+        .mark_list {
+            width: 1000px;
+        }
+
+        .marker {
+            padding: 0.3em;
+            margin-bottom: 1em;
+        }
+
+        .mark_detail {
+            display: none;
+        }
+
+        .dropdown-toggle {
+            width: 150px;
+        }
+
+        #upload_form {
+            display: none;
+            border: 2px solid black;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 0 0 1em 0;
+        }
+
+        #upload_form>* {
+            margin: 1em 0 1em 0;
+        }
+
+        .upload_text {
+            width: 700px;
+        }
+
+        textarea {
+            resize: none;
+        }
+
+        #upload_form span {
+            width: 100px;
+        }
+
+        .icon {
+            width: 100%;
+        }
+
+        #upload_btn_text {
+            font-size: 15pt;
+        }
+
+        .badge {
+            margin-left: 10px;
+        }
+
+        .select_tt_list{
+            padding: 0;
+            margin-left: 0.3em;
+        }
+        .render_comment{
+            border: none;
+            resize: none;
+            width: 700px;
+            height: 100%;
+        }
+        .render_comment:focus{
+            outline: none;
+        }
+    </style>
+    <script>
+        function test(id) {
+            $(`#${id}`).css('height', $(`#${id}`).prop('scrollHeight'));
+        }
+
+        function open_upload_form(obj) {
+            if ($('#upload_form').css('display') == 'none') {
+                $('#upload_form').show();
+                $(obj).removeClass('btn-success');
+                $(obj).addClass('btn-danger');
+                $('#upload_form_open_btn').empty();
+                $('#upload_form_open_btn').append(`<span class="material-symbols-outlined">remove</span>`);
+            } else {
+                $('#upload_form').hide();
+                $(obj).removeClass('btn-danger');
+                $(obj).addClass('btn-success');
+                $('#upload_form_open_btn').empty();
+                $('#upload_form_open_btn').append(`<span class="material-symbols-outlined">add</span>`);
+            }
+        }
+
+        function change_name(target_id, type, obj) {
+            $(`#${target_id}`).text($(obj).text());
+            $(`#input_search_${type}`).val($(obj).text());
+        }
+        function sendUploadInfo() {
+            checked_tech_stack = $('[name="upload_tech_stack_input"]:checked');
+            checked_tag = $('[name="upload_tag_input"]:checked');
+            if (checked_tech_stack.length == 0 || checked_tag.length == 0) {
+                alert('기술 스택과 태그를 모두 선택해주세요');
+                return false;
+            }
+
+            tech_stack = checked_tech_stack.val();
+            tag = checked_tag.val();
+            title_name = $("#title_input").val();
+            comment_email = $("#comment_input").val();
+            url_id = $("#url_input").val();
+            user_id = $('#user_id_input').val();
+            
+
+            if (tech_stack.length == 0 || tag.length == 0 || title_name.length == 0 || comment_email.length == 0 || url_id.length == 0) {
+                alert('모든 내용을 입력해주세요.');
+                return false;
+            }
+
+            $.ajax({
+                type: "POST",
+                url: "/info",
+                data: {
+                    tech_stack: tech_stack,
+                    tag: tag,
+                    title_give: title_name,
+                    comment_give: comment_email,
+                    url_give: url_id,
+                    user_id: user_id
+                },
+                success: function (response) {
+                    if (response["result"] == "success") {
+                        console.log("check")
+                        window.location.reload();
+                    }
+                },
+            });
+        }
+
+        function send_search_info() {
+            $('#search_form').submit();
+        }
+
+        function logout(){
+            $.removeCookie('user_token');
+            window.location.href = '{{ url_for("layout") }}';
+        }
+    </script>
+</head>
+
+<body>
+    <div id="wrap">
+        <div id="user_menu" class="row justify-content-start">
+            <div class="col-auto">
+                <button class="btn btn-outline-secondary" onclick="logout()">로그아웃</button>
+            </div>
+        </div>
+        <div class="container-xxl bg-light" id="head_wrap">
+            <div class="row justify-content-start align-items-center">
+                <div class="col-auto">
+                    <a href="{{ url_for('marker') }}" class="row align-items-center"><spanclass="material-symbols-outlined">refresh</span></a>
+                </div>
+                <div class="col-auto">
+                    <div class="dropdown">
+                        <button id="search_tech_stack" class="btn btn-outline-dark dropdown-toggle" type="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            기술 스택
+                        </button>
+                        <ul class="dropdown-menu">
+                            {% if tech_stack_list %}
+                            {% for tech_stack in tech_stack_list %}
+                            <li><a id="search_tech_stack_{{ tech_stack }}" class="dropdown-item"onclick="change_name('search_tech_stack', 'tech_stack', this)">{{ tech_stack }}</a></li>
+                            {% endfor %}
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <div class="dropdown">
+                        <button id="search_tag" class="btn btn-outline-info dropdown-toggle" type="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            태그
+                        </button>
+                        <ul class="dropdown-menu">
+                            {% if tag_list %}
+                            {% for tag in tag_list %}
+                            <li><a id="search_tag_{{ tag }}" class="dropdown-item"onclick="change_name('search_tag', 'tag', this)">{{ tag }}</a></li>
+                            {% endfor %}
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="col">
+                    <form action="/search_receive" method="get" id="search_form">
+                        <input type="hidden" name="search_tag_give" id="input_search_tag" value="">
+                        <input type="hidden" name="search_tech_stack_give" id="input_search_tech_stack" value="">
+                        <input type="text" name="search_keyword_give" id="input_search_keyword">
+                        <input type="button" class="btn btn-secondary" onclick="send_search_info()" value="검색">
+                    </form>
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-success" onclick="open_upload_form(this)"id="upload_form_open_btn">
+                        <span class="material-symbols-outlined">add</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% if keyword_list %}
+        {% if keyword_list[0]|length > 0 %}
+        <script>
+            let obj1 = $(`#search_tech_stack_{{ keyword_list[0] }}`);
+            change_name('search_tech_stack', 'tech_stack', obj1);
+        </script>
+        {% endif %}
+        {% if keyword_list[1]|length > 0 %}
+        <script>
+            let obj2 = $(`#search_tag_{{ keyword_list[1] }}`);
+            change_name('search_tag', 'tag', obj2);
+        </script>
+        {% endif %}
+        {% if keyword_list[2]|length > 0 %}
+        <script>
+            $('#input_search_keyword').val('{{ keyword_list[2] }}')
+        </script>
+        {% endif %}
+        {% endif %}
+
+        <div id="upload_form">
+            <div class="row">
+                <span>기술 스택</span>
+                <div id="upload_techStack_list">
+                    <ul class="techStack_list">
+                        {% if tech_stack_list %}
+                        {% for tech_stack in tech_stack_list %}
+                        <input type="radio" class="btn-check" name="upload_tech_stack_input"id="tech_stack_{{ tech_stack }}" autocomplete="off" value="{{ tech_stack }}">
+                        <label class="btn btn-outline-dark" for="tech_stack_{{ tech_stack }}">{{ tech_stack }}</label>
+                        {% endfor %}
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+            <div class="row">
+                <span>태그</span>
+                <div id="upload_tag_list">
+                    <ul class="tag_list">
+                        {% if tag_list %}
+                        {% for tag in tag_list %}
+                        <input type="radio" class="btn-check" name="upload_tag_input" id="tag_{{ tag }}"autocomplete="off" value="{{ tag }}">
+                        <label class="btn btn-outline-info" for="tag_{{ tag }}">{{ tag }}</label>
+                        {% endfor %}
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <input class="upload_text" id="title_input" type="text" placeholder="Title">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <textarea class="upload_text" id="comment_input" rows="3" placeholder="Comment"></textarea>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <input class="upload_text" id="url_input" type="url" placeholder="URL">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <input id="user_id_input" type="hidden">
+                    <button type="button" class="btn btn-primary" onclick="sendUploadInfo();">등록</button>
+                </div>
+            </div>
+        </div>
+
+        {% if token %}
+            <script>
+                var base64Url = '{{token}}'.split('.')[1];  // [0]=haeder, [1]=payload, [2]=verify signature
+                var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                var jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                const token = JSON.parse(jsonPayload);
+                $('#user_id_input').val(token['id']);
+            </script>
+        {% endif %}
+        
+        <div id="mark_list" class="mark_list">
+        </div>
+
+        {% if tech_stack_list and tag_list %}
+            <script>
+                const s_tech_stack_list = '{{tech_stack_list}}'.replace(/&#39;/g, '').replace(/[\[\]]/gi, '').split(', ');
+                const s_tag_list = '{{tag_list}}'.replace(/&#39;/g, '').replace(/[\[\]]/gi, '').split(', ');
+            </script>
+        {% endif %}
+        <script>
+            function create_marker(marker_list, marker) {
+                let inner_html = `<div class="accordion marker" id="mark_${marker['_id']['$oid']}">
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header" id="headingOne_${marker['_id']['$oid']}">
+                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse_${marker['_id']['$oid']}" aria-expanded="false" aria-controls="collapse_${marker['_id']['$oid']}" onclick="test('render_comment_${marker['_id']['$oid']}')">
+                                                <span id="render_title_${marker['_id']['$oid']}">${marker['title']}</span>
+                                                <div class="col-auto">
+                                                    <h5><span class="badge bg-dark" id="render_tech_stack_${marker['_id']['$oid']}">${marker['tech_stack']}</span></h5>
+                                                </div>
+                                                <div class="col">
+                                                    <h5><span class="badge bg-info" id="render_tag_${marker['_id']['$oid']}">${marker['tag']}</span></h5>
+                                                </div>
+                                            </button>
+                                            </h2>
+                                            <div id="collapse_${marker['_id']['$oid']}" class="accordion-collapse collapse" aria-labelledby="headingOne_${marker['_id']['$oid']}" data-bs-parent="#mark_${marker['_id']['$oid']}">
+                                                <div class="accordion-body">
+                                                    <div class="row">
+                                                        <div class="col">
+                                                            <div class="row"><div class="col-auto">
+                                                                <textarea class="render_comment" id="render_comment_${marker['_id']['$oid']}" readonly>${marker['comment']}</textarea>
+                                                            </div></div>
+                                                            <div class="row"><div class="col"><a href="${marker['url']}" id="render_url_${marker['_id']['$oid']}" target="_blank">${marker['url']}</a></div></div>
+                                                        </div>`;
+                                        if(token['id'] == marker['user_id']){
+                                            inner_html += `<div class="col-auto">
+                                                                <div class="row">
+                                                                    <div class="col-auto">
+                                                                        <button class="btn btn-primary" onclick="update_mode('mark_${marker['_id']['$oid']}')">수정</button>
+                                                                    </div>
+                                                                    <div class="col">
+                                                                        <button class="btn btn-primary" onclick="delete_marker('${marker['_id']['$oid']}')">삭제</button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>`;
+                                        }
+                                    inner_html += `</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                     </div>`;
+                marker_list.append(inner_html);
+                marker_list.append(create_marker_update_form(marker));
+            }
+            
+            function create_marker_update_form(marker){
+                let marker_update_form_html = `<div class="accordion marker hide_marker" id="update_form_mark_${marker['_id']['$oid']}">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingOne_${marker['_id']['$oid']}">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle data-bs-target="#update_form_collapse_${marker['_id']['$oid']}" aria-expanded="true" aria-controls="collapse_${marker['_id']['$oid']}">
+                                    <input type="text" style="width:600px" placeholder="Title" value="${marker['title']}" id="update_title_${marker['_id']['$oid']}">
+                                    <div class="col-auto">
+                                        <h5><select name="update_tech_stack_sb" class="btn btn-dark select_tt_list" id="update_tech_stack_sb_${marker['_id']['$oid']}">`;
+                                        for(let i = 0; i < s_tech_stack_list.length; i++){
+                                            marker_update_form_html+= `<option`;
+                                            if(s_tech_stack_list[i]==marker['tech_stack']){
+                                                marker_update_form_html+=` selected`;
+                                            }
+                                            marker_update_form_html+=`>${s_tech_stack_list[i]}</option>`;
+                                        }
+            marker_update_form_html += `</select></h5>
+                                    </div>
+                                    <div class="col">
+                                        <h5><select name="update_tag_sb" class="btn btn-info select_tt_list" id="update_tag_sb_${marker['_id']['$oid']}">`;
+                                            for(let i = 0; i < s_tag_list.length; i++){
+                                                marker_update_form_html+=`<option`;
+                                                if(s_tag_list[i]==marker['tag']){
+                                                    marker_update_form_html+=` selected`;
+                                                }
+                                                marker_update_form_html+=`>${s_tag_list[i]}</option>`;
+                                            }
+            marker_update_form_html += `</select></h5>
+                                    </div>
+                                </button>
+                                </h2>
+                                <div id="update_form_collapse_${marker['_id']['$oid']}" class="accordion-collapse collapse show" aria-labelledby="headingOne_${marker['_id']['$oid']}" data-bs-parent="#update_form_mark_${marker['_id']['$oid']}">
+                                    <div class="accordion-body">
+                                        <div class="row">
+                                            <div class="col">
+                                                <div class="row"><div class="col-auto">
+                                                    <textarea style="width:600px" rows="4" placeholder="Comment" id="update_comment_${marker['_id']['$oid']}">${marker['comment']}</textarea>
+                                                </div></div>
+                                                <div class="row"><div class="col">
+                                                    <input style="width:600px" placeholder="URL" value="${marker['url']}" id="update_url_${marker['_id']['$oid']}">
+                                                </div></div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <div class="row">
+                                                    <div class="col-auto">
+                                                        <button class="btn btn-success" onclick="update_marker('${marker['_id']['$oid']}')">완료</button>
+                                                    </div>
+                                                    <div class="col">
+                                                        <button class="btn btn-danger" onclick="update_mode('mark_${marker['_id']['$oid']}')">취소</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+                return marker_update_form_html;
+            }
+
+            function delete_marker(marker_id){
+                let answer = confirm('삭제하시겠습니까?');
+                if(!answer){
+                    return false;
+                }
+                $.ajax({
+                    type: 'POST',
+                    url: "{{ url_for('delete_marker') }}",
+                    data:{ marker_id: marker_id },
+                    success: function(response){
+                        if(response['result']=='success'){
+                            send_search_info();
+                        }
+                    }
+                });
+            }
+
+            function update_marker(marker_id){
+                $.ajax({
+                    type: 'POST',
+                    url:"{{ url_for('update_marker') }}",
+                    data:{
+                        marker_id: marker_id,
+                        update_title: $(`#update_title_${marker_id}`).val(),
+                        update_comment: $(`#update_comment_${marker_id}`).val(),
+                        update_url: $(`#update_url_${marker_id}`).val(),
+                        update_tech_stack: $(`#update_tech_stack_sb_${marker_id}`).val(),
+                        update_tag: $(`#update_tag_sb_${marker_id}`).val()
+                    },
+                    success: function(response){
+                        if(response['result']=='success'){
+                            send_search_info();
+                        }
+                    }
+                });
+            
+            }
+
+            function update_mode(marker_id){
+                if($(`#${marker_id}`).css('display')=='none'){
+                    $(`#update_form_${marker_id}`).hide();
+                    $(`#${marker_id}`).show();
+                    o_marker_id = marker_id.split('_')[1];
+                    $(`#update_title_${o_marker_id}`).val($(`#render_title_${o_marker_id}`).text());
+                    $(`#update_comment_${o_marker_id}`).val($(`#render_comment_${o_marker_id}`).text().trim());
+                    $(`#update_url_${o_marker_id}`).val($(`#render_url_${o_marker_id}`).text());
+                    
+                    let update_tech_stack_sb = document.getElementById(`update_tech_stack_sb_${o_marker_id}`).options;
+                    for(let i = 0; i < update_tech_stack_sb.length; i++){
+                        if(update_tech_stack_sb[i].value==$(`#render_tech_stack_${o_marker_id}`).text()){
+                            update_tech_stack_sb[i].selected = true;
+                        }
+                    }
+
+                    let update_tag_sb = document.getElementById(`update_tag_sb_${o_marker_id}`).options;
+                    for(let i = 0; i < update_tag_sb.length; i++){
+                        if(update_tag_sb[i].value==$(`#render_tag_${o_marker_id}`).text()){
+                            update_tag_sb[i].selected = true;
+                        }
+                    }
+                } else {
+                    $(`#update_form_${marker_id}`).show();
+                    $(`#${marker_id}`).hide();
+
+                    o_marker_id = marker_id.split('_')[1];
+                    $(`#update_title_${o_marker_id}`).val($(`#render_title_${o_marker_id}`).text());
+                    $(`#update_comment_${o_marker_id}`).val($(`#render_comment_${o_marker_id}`).text().trim());
+                    $(`#update_url_${o_marker_id}`).val($(`#render_url_${o_marker_id}`).text());
+                    let update_tech_stack_sb = document.getElementById(`update_tech_stack_sb_${o_marker_id}`).options;
+                    for(let i = 0; i < update_tech_stack_sb.length; i++){
+                        if(update_tech_stack_sb[i].value==$(`#render_tech_stack_${o_marker_id}`).text()){
+                            update_tech_stack_sb[i].selected = true;
+                        }
+                    }
+                    let update_tag_sb = document.getElementById(`update_tag_sb_${o_marker_id}`).options;
+                    for(let i = 0; i < update_tag_sb.length; i++){
+                        if(update_tag_sb[i].value==$(`#render_tag_${o_marker_id}`).text()){
+                            update_tag_sb[i].selected = true;
+                        }
+                    }
+                }
+                
+            }
+        </script>
+        {% if search_results %}
+            <script>
+                $('#mark_list').empty();
+                let search_results = JSON.parse("{{ search_results }}".replace(/\n/gi,"\\r\\n").replace(/&#34;/g, '\"'));
+                mark_list = $('#mark_list');
+                for (let i = 0; i < search_results.length; i++) {
+                    let search_list = search_results[i];
+                    create_marker(mark_list, search_list);
+                }
+            </script>
+        {% elif marker_list %}
+            <script>
+                let marker_list = JSON.parse("{{ marker_list }}".replace(/\n/gi,"\\r\\n").replace(/&#34;/g, '\"'));
+                mark_list = $('#mark_list');
+                for (let i = 0; i < marker_list.length; i++) {
+                    let marker = marker_list[i];
+                    create_marker(mark_list, marker);
+                }
+            </script>
+        {% endif %}
+    </div>
+</body>
+
+</html>
